@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>German Word Quiz</title>
+  <style>
+    /* Add a Google Font for Fraktur */
+    @import url('https://fonts.googleapis.com/css2?family=Fruktur&display=swap');
+
+    body {
+      font-family: 'Fruktur', sans-serif;
+      background-color: #f4f4f4;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 50%;
+      margin: auto;
+      border: 2px solid #000;
+      background: linear-gradient(135deg, #f7f7f7, #e7e7e7);
+    }
+    h1 {
+      color: #D71A3B; /* Red from German flag */
+      margin-bottom: 20px;
+    }
+    .objective {
+      font-size: 20px;
+      color: #555;
+      margin-bottom: 20px;
+    }
+    input[type="text"] {
+      padding: 10px;
+      font-size: 18px;
+      margin-top: 20px;
+      width: 70%;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #D71A3B; /* Red from German flag */
+      color: white;
+      padding: 10px 20px;
+      font-size: 18px;
+      border: none;
+      border-radius: 5px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #B3122F; /* Darker red */
+    }
+    .score {
+      font-size: 24px;
+      margin-top: 20px;
+      color: #555;
+    }
+    select {
+      padding: 10px;
+      font-size: 16px;
+      margin-top: 20px;
+      border-radius: 5px;
+    }
+    .timer {
+      font-size: 30px;
+      font-weight: bold;
+      margin-top: 20px;
+      color: #D71A3B; /* Red color */
+    }
+    #word {
+      font-size: 36px;
+      font-weight: bold;
+      color: #f2a900; /* Yellow from the German flag */
+      margin-top: 30px;
+    }
+    /* German Flag Colors for Background */
+    .german-flag {
+      background-color: #000;  /* Black */
+      padding: 10px;
+      color: #fff;
+    }
+    /* Timer section styled */
+    .timer-container {
+      background-color: #f2a900; /* Yellow from German flag */
+      padding: 10px;
+      border-radius: 5px;
+    }
+    /* Popup modal */
+    .modal {
+      display: none; /* Hidden by default */
+      position: fixed;
+      z-index: 1; /* Sit on top */
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4); /* Black with opacity */
+      padding-top: 60px;
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 5% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="german-flag">
+    <h1>German Word Quiz</h1>
+  </div>
+
+  <div class="container">
+    <div class="objective">
+      <p><strong>Objective:</strong> Guess the German word! You have 10 seconds per word. If you get 5 correct, you win. If you get 3 wrong, you lose.</p>
+    </div>
+    
+    <p>Select Difficulty:</p>
+    <select id="difficulty" onchange="setDifficulty()">
+      <option value="easy">Easy</option>
+      <option value="medium">Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+
+    <p id="word"></p>
+    <input type="text" id="guess" placeholder="Guess the English word" />
+    <button onclick="checkAnswer()">Submit</button>
+
+    <p class="score">Score: <span id="score">0</span></p>
+    <p class="score">Wrong Answers: <span id="wrong">0</span></p>
+
+    <div class="timer-container">
+      <p class="timer" id="timer">Time Left: 10s</p>
+    </div>
+    
+    <p id="result"></p>
+  </div>
+
+  <!-- Modal for end of game -->
+  <div id="gameOverModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <p id="modalResult">Game Over!</p>
+      <p>Score: <span id="modalScore"></span></p>
+      <p>Wrong Answers: <span id="modalWrong"></span></p>
+      <button onclick="restartGame()">Restart Game</button>
+    </div>
+  </div>
+
+  <script>
+    const words = [
+      { german: 'Apfel', english: 'apple' },
+      { german: 'Hund', english: 'dog' },
+      { german: 'Haus', english: 'house' },
+      { german: 'Auto', english: 'car' },
+      { german: 'Buch', english: 'book' },
+      { german: 'Freund', english: 'friend' },
+      { german: 'Tisch', english: 'table' },
+      { german: 'Stuhl', english: 'chair' },
+      { german: 'Blume', english: 'flower' },
+      { german: 'Fenster', english: 'window' },
+      { german: 'Straße', english: 'street' },
+      { german: 'Apotheke', english: 'pharmacy' },
+      { german: 'Lebensmittel', english: 'groceries' },
+      { german: 'Tier', english: 'animal' },
+      { german: 'Wasser', english: 'water' },
+      { german: 'Berg', english: 'mountain' },
+      { german: 'Küche', english: 'kitchen' },
+      { german: 'Kirche', english: 'church' },
+      { german: 'Licht', english: 'light' },
+      { german: 'Sonne', english: 'sun' },
+      { german: 'Mond', english: 'moon' },
+      { german: 'Fahrrad', english: 'bicycle' },
+      { german: 'Schule', english: 'school' },
+      { german: 'Bibliothek', english: 'library' },
+      { german: 'Kunst', english: 'art' },
+      { german: 'Sport', english: 'sport' },
+      { german: 'Laden', english: 'store' },
+      { german: 'Straße', english: 'street' }
+    ];
+
+    let usedWords = [];
+    let score = 0;
+    let wrongAnswers = 0;
+    let selectedWords = [];
+    let currentWord = null;
+    let countdown = 10;
+    let timerInterval;
+    let gameOver = false;
+
+    // AudioContext to create sounds
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Function to generate a sound using different waveforms (correct and incorrect sounds)
+    function playSound(frequency, duration, type) {
+      const oscillator = audioContext.createOscillator();
+      oscillator.type = type; // "sine" for a chime, "square" for buzzer
+      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime); // frequency in Hz
+      oscillator.connect(audioContext.destination);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + duration);
+    }
+
+    // Function to play the correct answer sound (chime with sine wave)
+    function playCorrectSound() {
+      playSound(600, 0.4, 'sine');  // A pleasant chime sound (600 Hz)
+    }
+
+    // Function to play the incorrect answer sound (buzzer with square wave)
+    function playIncorrectSound() {
+      playSound(300, 0.4, 'square');  // A soft buzzer sound (300 Hz)
+    }
+
+    // Set the difficulty level and the words that should be used
+    function setDifficulty() {
+      const difficulty = document.getElementById('difficulty').value;
+
+      if (difficulty === 'easy') {
+        selectedWords = words.slice(0, 8); // First 8 words for Easy
+      } else if (difficulty === 'medium') {
+        selectedWords = words.slice(0, 15); // First 15 words for Medium
+      } else {
+        selectedWords = words.slice(); // All words for Hard
+      }
+
+      // Reset the game
+      usedWords = [];
+      score = 0;
+      wrongAnswers = 0;
+      gameOver = false;
+      document.getElementById('score').textContent = score;
+      document.getElementById('wrong').textContent = wrongAnswers;
+      document.getElementById('timer').textContent = `Time Left: ${countdown}s`;
+      usedWords = [];
+      currentWord = getRandomWord();
+      displayWord();
+      startTimer();
+    }
+
+    // Select a random word from the selected list that hasn't been used
+    function getRandomWord() {
+      if (usedWords.length === selectedWords.length) {
+        alert("You've completed all words for this difficulty!");
+        return null;
+      }
+
+      let randomIndex = Math.floor(Math.random() * selectedWords.length);
+      while (usedWords.includes(randomIndex)) {
+        randomIndex = Math.floor(Math.random() * selectedWords.length);
+      }
+
+      usedWords.push(randomIndex);
+      return selectedWords[randomIndex];
+    }
+
+    // Display the current word
+    function displayWord() {
+      if (currentWord === null) {
+        document.getElementById('word').textContent = "Game Over!";
+        return;
+      }
+      document.getElementById('word').textContent = currentWord.german;
+      document.getElementById('result').textContent = '';
+    }
+
+    // Start the countdown timer
+    function startTimer() {
+      countdown = 10; // Reset timer to 10 seconds
+      document.getElementById('timer').textContent = `Time Left: ${countdown}s`;
+
+      if (timerInterval) {
+        clearInterval(timerInterval); // Clear the existing timer
+      }
+
+      timerInterval = setInterval(function() {
+        if (gameOver) {
+          clearInterval(timerInterval);  // Stop the timer if game is over
+          return;
+        }
+
+        if (countdown <= 0) {
+          clearInterval(timerInterval);
+          wrongAnswers++;  // Count as wrong answer if timer runs out
+          document.getElementById('wrong').textContent = wrongAnswers;
+          checkAnswer();  // Automatically check if the time runs out
+          return;
+        }
+
+        countdown--;
+        document.getElementById('timer').textContent = `Time Left: ${countdown}s`;
+      }, 1000);
+    }
+
+    // Check if the user's guess is correct
+    function checkAnswer() {
+      if (gameOver) return;
+
+      const userGuess = document.getElementById('guess').value.trim().toLowerCase();
+      const correctAnswer = currentWord.english.toLowerCase();
+
+      if (userGuess === correctAnswer) {
+        score++;
+        document.getElementById('result').textContent = 'Correct!';
+        document.getElementById('score').textContent = score;
+        playCorrectSound();  // Play correct sound
+      } else {
+        wrongAnswers++;
+        document.getElementById('result').textContent = `Wrong! The correct answer was "${correctAnswer}".`;
+        document.getElementById('wrong').textContent = wrongAnswers;
+        playIncorrectSound();  // Play incorrect sound
+      }
+
+      if (wrongAnswers >= 3 || score >= 5) {  // Winning condition changed to 5 correct answers
+        gameOver = true;
+        clearInterval(timerInterval); // Stop the timer when game is over
+        document.getElementById('result').textContent = `Game Over! You got ${score} correct and ${wrongAnswers} wrong.`;
+        
+        // Set win or lose message
+        if (score >= 5) {
+          document.getElementById('modalResult').textContent = "You Win!";
+        } else {
+          document.getElementById('modalResult').textContent = "You Lose!";
+        }
+
+        openModal(); // Show the game over modal
+      } else {
+        currentWord = getRandomWord();
+        document.getElementById('guess').value = ''; // Clear input
+        displayWord();
+        startTimer(); // Reset the timer for the next question
+      }
+    }
+
+    // Open the Game Over Modal
+    function openModal() {
+      document.getElementById('modalScore').textContent = score;
+      document.getElementById('modalWrong').textContent = wrongAnswers;
+      document.getElementById('gameOverModal').style.display = 'block';
+    }
+
+    // Close the Game Over Modal
+    function closeModal() {
+      document.getElementById('gameOverModal').style.display = 'none';
+    }
+
+    // Restart the game
+    function restartGame() {
+      setDifficulty();
+      closeModal();
+    }
+
+    // Initialize the game with the default difficulty
+    setDifficulty();
+  </script>
+
+</body>
+</html>
+
